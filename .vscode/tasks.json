@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build_hex",
+      "group": "build",
+      "type": "shell",
+      "command": "./build.sh"
+    },
+    {
+      "label": "flash_hex",
+      "group": { "kind" : "build", "isDefault": true },
+      "dependsOn": "build_hex",
+      "type": "shell",
+      "command": "./flash.sh"
+    }
+  ]
+}
