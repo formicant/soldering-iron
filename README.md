@@ -8,7 +8,7 @@ A program for `ATTiny2313` to control the temperature of a soldering iron.
 The controller uses PWM to control the soldering iron's temperature.
 
 Both rising and falling edges of the pulses must be synchronized with the moments when the 50 Hz AC power voltage crosses zero.
-This is possible thanks to a special circuit generating a sync pulse each time the power voltage crosses zero.
+This is possible thanks to a special circuit generating a sync pulse each time the power voltage crosses zero (falling edge).
 
 The PWM level is controlled by either of the two 10-positional switches (switch1 and switch2). A two-positional switch (switch0) defines which of the two is currently used. This allows quick switching between two temperature modes (active and passive).
 

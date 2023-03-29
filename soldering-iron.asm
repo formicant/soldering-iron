@@ -7,9 +7,9 @@
 
 ; Constants
 .equ max_level  = 9
-; timer0 PWM mode: external clock T0, use OCR0A as TOP
+; timer0 PWM mode: external clock T0 (falling edge), use OCR0A as TOP
 .equ pwm_mode_a = (1<<WGM01) | (1<<WGM00)
-.equ pwm_mode_b = (1<<WGM02) | (1<<CS02) | (1<<CS01) | (1<<CS00)
+.equ pwm_mode_b = (1<<WGM02) | (1<<CS02) | (1<<CS01)
 .equ pwm_on     = (1<<COM0B1) ; channel B fast PWM
 
 ; Register aliases
