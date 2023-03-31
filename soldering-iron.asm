@@ -91,7 +91,7 @@ loop:
 timer:
       in    level, PINB       ; get switch 1 and 2 position
       com   level             ; invert the input bits
-      sbic  PIND, pin_sw0     ; if switch0 is 0 (on)
+      sbic  PIND, pin_sw0     ; if switch0 is 1 (off)
       swap  level             ;   then use switch 2
       andi  level, 0x0F       ;   else use switch 1
       subi  level, 1          ; PWM value written to OCR0B should be 
