@@ -42,7 +42,7 @@ The controller uses Port B for switches 1 and 2, D6 for switch 3, T0 external ti
        LED2 <- PD1─┤3      18├─PB6 <- switch1.4
                PA1─┤4      17├─PB5 <- switch1.2
                PA0─┤5      16├─PB4 <- switch1.1
-               PD2─┤6      15├─PB3 <- switch2.8
+    speaker <- PD2─┤6      15├─PB3 <- switch2.8
                PD3─┤7      14├─PB2 <- switch2.4
 sync ->   (T0) PD4─┤8      13├─PB1 <- switch2.2
 pwm  <- (OC0B) PD5─┤9      12├─PB0 <- switch2.1
