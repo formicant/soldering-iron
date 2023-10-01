@@ -3,13 +3,13 @@
 ; Port pins
 .equ pin_pwm  = PD5     ; output, PWM channel 0B
 .equ pin_sync = PD4     ; input, timer source T0
-.equ pin_sw3  = PD6     ; input with a pull-up resistor, switch 3
+.equ pin_btn  = PD6     ; input with a pull-up resistor, button (0 = up, 1 = down)
 .equ pin_led1 = PD0     ; output, green LED indicating passive mode (1)
 .equ pin_led2 = PD1     ; output, red LED indicating active mode (2)
 .equ pin_snd  = PD2     ; output, speaker
 
 .equ portD_output = (1<<pin_pwm) | (1<<pin_snd) | (1<<pin_led1) | (1<<pin_led2)
-.equ portD_pullup = (1<<pin_sw3)
+.equ portD_pullup = (1<<pin_btn)
 
 
 ; Constants
@@ -39,11 +39,12 @@
 .def level = r18  ; 0..9
 .def leds  = r19
 .def beep  = r20
-.def sw3   = r21  ; 0 = active, 1 = passive
+.def btn   = r21  ; button state
+.def prev  = r22  ; previous button state
 .def trash = r23
 .def timeL = r24
 .def timeH = r25
-
+.def warn  = r26  ; = XL
 
 ; Macros
 
@@ -94,7 +95,7 @@ reset:
       ; initialize port D:
       ;   pin_pwm, pin_led1, pin_led2 for output
       ;   pin_sync for input
-      ;   pin_sw3  for input with a pull-up resistor
+      ;   pin_btn  for input with a pull-up resistor
       ldi   tmp, portD_output
       out   DDRD, tmp
       ldi   tmp, portD_pullup
@@ -114,12 +115,14 @@ reset:
       out   TCCR0B, tmp
       
       ; initialize registers
-      ldi   sw3, 1            ; passive
-      ldi   mode, 1           ; passive
+      ldi   btn, 0            ; button up
+      ldi   prev, 0           ; button up
+      ldi   mode, 2           ; active
+      clr   warn
       clr   timeL
       clr   timeH
-      ldi   XL, low (warm_up_time)
-      ldi   XH, high(warm_up_time)
+      ldi   YL, low (warm_up_time)
+      ldi   YH, high(warm_up_time)
       
       ; enable idle sleep mode
       ldi   tmp, (1<<SE)
@@ -137,22 +140,33 @@ loop:
 
 ; Timer0 interrupt (every PWM period, 90 ms)
 timer:
-      in    tmp, PIND
-      andi  tmp, (1<<pin_sw3) ; get switch 3 position
-      cp    tmp, sw3          ; compare with previous position
-      breq  same_sw3_position
+      clr   beep
 
-new_sw3_position:
-      mov   sw3, tmp
-      ; set mode
-      ldi   mode, 1           ; if sw3 == 1
-      sbrs  sw3, pin_sw3      ;   then mode = 1
-      ldi   mode, 2           ;   else mode = 2
-      ; reset time
+      in    tmp, PIND
+      andi  tmp, (1<<pin_btn) ; get button state
+      mov   btn, tmp
+      
+      com   prev
+      and   tmp, prev         ; btn is down and prev is up
+      mov   prev, btn
+      breq  same_mode  
+
+change_mode:
+      ldi   tmp, 2
+      sub   tmp, warn         ; if warn, switch to the same mode
+      cp    mode, tmp
+      breq  change_to_passive
+change_to_active:
+      ldi   mode, 2
+      rjmp  reset_time
+change_to_passive:
+      ldi   mode, 1
+reset_time:
       clr   timeL
       clr   timeH
+      ldi   beep, 1
 
-same_sw3_position:
+same_mode:
       rcall process_mode
       
       ; set PWM value
@@ -205,21 +219,21 @@ do_beep2:
       ret
 
 
-; Calculates `level`, `leds`, and `beep` by `mode` and switch position.
+; Calculates `level`, `leds`, `beep`, and `warn` by `mode` and switch position.
 ; Increments `time` if `mode` != off. Changes `mode` if time is up.
-;   input:  `mode`, `time`, `warm`
-;   output: `mode`, `time`, `warm`, `level`, `leds`, `beep`
+;   input:   `mode`, `time`, `beep`
+;   output:  `mode`, `time`, `beep`, `level`, `leds`, `warn`
 process_mode:
       clr   leds
-      clr   beep
+      clr   warn
       tst   mode
       breq  mode0
       
       ; decrement warm time if > 0
-      cp    XL, zero
-      cpc   XH, zero
+      mov   tmp, YL
+      or    tmp, YH
       breq  is_warm
-      sbiw  XL, 1
+      sbiw  YL, 1
       rjmp  get_level
       
 is_warm:
@@ -243,10 +257,11 @@ mode2:
       brlo  mode2_normal_time
 
 mode2_warn_time:
+      ldi   warn, 1
       mov   tmp, timeL
       andi  tmp, (1<<flash_bit)
       breq  mode2_no_led
-      ldi   beep, 1
+      ori   beep, 1
 mode2_normal_time:
       ldi   leds, (1<<pin_led2)
 mode2_no_led:
@@ -271,10 +286,11 @@ mode1:
       brlo  mode1_normal_time
 
 mode1_warn_time:
+      ldi   warn, 1
       mov   tmp, timeL
       andi  tmp, (1<<flash_bit)
       breq  mode1_no_led
-      ldi   beep, 1
+      ori   beep, 1
 mode1_normal_time:
       ldi   leds, (1<<pin_led1)
 mode1_no_led:
@@ -290,6 +306,6 @@ mode1_off_time:
 ; Off mode
 mode0:
       clr   level             ; switch off PWM
-      ldi   XL, low (warm_up_time)
-      ldi   XH, high(warm_up_time)
+      ldi   YL, low (warm_up_time)
+      ldi   YH, high(warm_up_time)
       ret

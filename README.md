@@ -12,7 +12,8 @@ The controller uses PWM to control the soldering iron's temperature.
 Both rising and falling edges of the pulses must be synchronized with the moments when the 50 Hz AC power voltage crosses zero.
 This is possible thanks to a special circuit generating a sync pulse each time the power voltage crosses zero (falling edge).
 
-The PWM level is controlled by either of the two 10-positional switches (switch1 and switch2). A two-positional switch (switch3) defines which of the two is currently used. This allows quick switching between two temperature modes (passive (sw1) and active (sw2)).
+The PWM level is controlled by either of the two 10-positional switches (switch1 for passive mode and switch2 for active mode).
+The button switches between the two modes.
 
 Each 10-position switch has 5 pins: a ground pin and 4 binary bits (1, 2, 4, 8) representing the switch's position (0 to 9) in binary.
 
@@ -21,18 +22,19 @@ The frequency of the PWM is 50 Hz (power) × 2 (zero crossings per period) / 9 (
 
 ### Timing
 
-If the active mode is switched on for `off_time2` (1 min), the controller automatically switches to the passive mode.
+If the active mode is switched on for `off_time2` (3 min) of , the controller automatically switches to the passive mode.
+(The first time after switching on, the time interval is larger by `warm_up_time` (2 min).)
 
 The red active mode LED starts flashing  after `warn_time1` (5 s before mode switching).
 
 If the passive mode is switched on for `off_time`` (5 min), the controller automatically switches off the output.
 
-The green passive mode LED starts flashing  after `warn_time2` (130 s before switching off).
+The yellow passive mode LED starts flashing  after `warn_time2` (10 s before switching off).
 
 
 ## Pins
 
-The controller uses Port B for switches 1 and 2, D6 for switch 3, T0 external timer pin (D5) for sync pulses, and OC0B pin (D4) for PWM output.
+The controller uses Port B for switches 1 and 2, D6 for the button, T0 external timer pin (D5) for sync pulses, and OC0B pin (D4) for PWM output.
 
 ```
                    ATTiny 2313
@@ -46,7 +48,7 @@ The controller uses Port B for switches 1 and 2, D6 for switch 3, T0 external ti
                PD3─┤7      14├─PB2 <- switch2.4
 sync ->   (T0) PD4─┤8      13├─PB1 <- switch2.2
 pwm  <- (OC0B) PD5─┤9      12├─PB0 <- switch2.1
-switch gnd ->  GND─┤10     11├─PD6 <- switch3
+switch gnd ->  GND─┤10     11├─PD6 <- button
                    └─────────┘
 ```
 
