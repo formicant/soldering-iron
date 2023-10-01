@@ -16,13 +16,13 @@
 
 .equ max_level  = 9
 
-.equ warm_up_time = 3333  ; * 90 ms = 5 min
+.equ warm_up_time = 1333  ; * 90 ms = 2 min
 ; time intervals for mode 1 (passive)
-.equ warn_time1   = 3000  ; * 90 ms = 4.5 min
+.equ warn_time1   = 3222  ; * 90 ms = 4 min 50 s
 .equ off_time1    = 3333  ; * 90 ms = 5 min
 ; time intervals for mode 2 (active)
-.equ warn_time2   =  611  ; * 90 ms = 55 s
-.equ off_time2    =  667  ; * 90 ms = 1 min
+.equ warn_time2   = 1944  ; * 90 ms = 2 min 55 s
+.equ off_time2    = 2000  ; * 90 ms = 3 min
 ; timeL bit used for LED flashing
 .equ flash_bit = 2  ; flash period = 90 ms * 2^(1 + flash_bit) = 0.72 s
 
@@ -271,9 +271,13 @@ mode1:
       brlo  mode1_normal_time
 
 mode1_warn_time:
-      sbrc  timeL, flash_bit
+      mov   tmp, timeL
+      andi  tmp, (1<<flash_bit)
+      breq  mode1_no_led
+      ldi   beep, 1
 mode1_normal_time:
       ldi   leds, (1<<pin_led1)
+mode1_no_led:
       ret
 
 mode1_off_time:
